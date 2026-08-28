@@ -41,7 +41,25 @@ Open `.env` and configure your Google OAuth Client ID:
 VITE_GOOGLE_CLIENT_ID=your_google_oauth_client_id_here
 ```
 
-### 3. Install dependencies
+### 3. How to Get a Google OAuth Client ID
+
+To run the application, you must configure a Google Cloud project to retrieve a Client ID:
+
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
+2. Create a new project (e.g. `YouTube Playlist Organizer`).
+3. In the sidebar, navigate to **APIs & Services** > **Library**, search for **YouTube Data API v3**, and click **Enable**.
+4. Go to **APIs & Services** > **OAuth consent screen**:
+   * Set User Type to **External** and fill in your app details.
+   * Under **Scopes**, add `/auth/youtube` (manage your YouTube account) and `/auth/youtube.force-ssl`.
+   * Under **Test Users**, add your own Google email address (so you can log in while in testing mode).
+5. Go to **APIs & Services** > **Credentials**:
+   * Click **Create Credentials** > **OAuth client ID**.
+   * Choose **Web application** as the Application Type.
+   * Under **Authorized JavaScript Origins**, click **Add URI** and enter `http://localhost:5173`.
+   * Under **Authorized Redirect URIs**, enter `http://localhost:5173` (matching the origin).
+   * Click **Create** and copy your Client ID into your local `.env` file.
+
+### 4. Install dependencies
 ```bash
 npm install
 ```
