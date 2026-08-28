@@ -64,15 +64,33 @@ To run the application, you must configure a Google Cloud project to retrieve a 
 npm install
 ```
 
-### 4. Run local server
+### 5. Run local server
 ```bash
 npm run dev
 ```
 
 The app will start running locally at `http://localhost:5173/`.
 
+## Desktop App (Electron)
+
+You can package this web application as a standalone desktop application (`.exe` for Windows, `.dmg` for macOS) so that users can download it, double-click, and run it locally on their computers.
+
+### Run Desktop App in Development
+To run the app inside a local desktop window (with hot reloading):
+```bash
+npm run electron:start
+```
+
+### Build Desktop Packages (.exe / .dmg)
+To compile a single-file portable executable (`.exe` on Windows, `.dmg` on macOS) that requires no local installation or terminal setup:
+```bash
+npm run electron:build
+```
+The resulting files will be generated in the `/release` directory!
+
 ## Technologies Used
 
+- **Desktop Framework**: Electron
 - **Frontend**: React 19, React Router v7, Vite
 - **Icons**: Lucide React
 - **APIs**: YouTube Data API v3, Google Identity Services (OAuth 2.0)
