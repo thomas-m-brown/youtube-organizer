@@ -24,8 +24,7 @@ export default function Dashboard({
   setProgress,
   triggerModal,
   searchQuery,
-  refetchPlaylists,
-  simulatorMode
+  refetchPlaylists
 }) {
   const [proposedPlan, setProposedPlan] = useState(null);
   const [quotaCost, setQuotaCost] = useState(0);
@@ -207,25 +206,20 @@ export default function Dashboard({
 
           if (!newPlaylistId) {
             setProgress(`Creating Master Playlist: ${cleanName}...`);
-            if (simulatorMode) {
-              await sleep(400);
-              newPlaylistId = "mock_master_" + Math.random().toString(36).substr(2, 9);
-            } else {
-              let desc = '';
-              if (useAutoDesc) {
-                desc = `Merged collection containing videos from: ${oldPlaylists.map(p => p.title).join(', ')}`;
-              }
-              const createRes = await fetch('https://www.googleapis.com/youtube/v3/playlists?part=snippet,status', {
-                method: 'POST',
-                headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  snippet: { title: cleanName, description: desc },
-                  status: { privacyStatus: 'private' }
-                })
-              });
-              const createdPlaylist = await createRes.json();
-              newPlaylistId = createdPlaylist.id;
+            let desc = '';
+            if (useAutoDesc) {
+              desc = `Merged collection containing videos from: ${oldPlaylists.map(p => p.title).join(', ')}`;
             }
+            const createRes = await fetch('https://www.googleapis.com/youtube/v3/playlists?part=snippet,status', {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                snippet: { title: cleanName, description: desc },
+                status: { privacyStatus: 'private' }
+              })
+            });
+            const createdPlaylist = await createRes.json();
+            newPlaylistId = createdPlaylist.id;
 
             job.createdPlaylists.push({ id: newPlaylistId, title: cleanName });
             job.completedVideos[newPlaylistId] = [];
@@ -246,34 +240,23 @@ export default function Dashboard({
             if (savedRestoration) {
               originalVideos = savedRestoration.videos || [];
             } else {
-              if (simulatorMode) {
-                await sleep(400);
-                const mockCount = old.videos || 5;
-                for (let i = 1; i <= mockCount; i++) {
-                  originalVideos.push({
-                    id: `mock_vid_${old.id}_${i}`,
-                    title: `Mock Song #${i} in ${old.title}`
-                  });
-                }
-              } else {
-                let pageToken = '';
-                do {
-                  const itemsRes = await fetch(
-                    `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${old.id}&maxResults=50${pageToken ? '&pageToken=' + pageToken : ''}`,
-                    { headers: { Authorization: `Bearer ${accessToken}` } }
-                  );
-                  const itemsData = await itemsRes.json();
-                  if (itemsData.items) {
-                    for (const item of itemsData.items) {
-                      originalVideos.push({
-                        id: item.snippet.resourceId.videoId,
-                        title: item.snippet.title || 'Unknown Video'
-                      });
-                    }
+              let pageToken = '';
+              do {
+                const itemsRes = await fetch(
+                  `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${old.id}&maxResults=50${pageToken ? '&pageToken=' + pageToken : ''}`,
+                  { headers: { Authorization: `Bearer ${accessToken}` } }
+                );
+                const itemsData = await itemsRes.json();
+                if (itemsData.items) {
+                  for (const item of itemsData.items) {
+                    originalVideos.push({
+                      id: item.snippet.resourceId.videoId,
+                      title: item.snippet.title || 'Unknown Video'
+                    });
                   }
-                  pageToken = itemsData.nextPageToken;
-                } while (pageToken);
-              }
+                }
+                pageToken = itemsData.nextPageToken;
+              } while (pageToken);
             }
 
             for (let vIdx = 0; vIdx < originalVideos.length; vIdx++) {
@@ -285,32 +268,23 @@ export default function Dashboard({
 
               setProgress(`Copying "${video.title}" to "${cleanName}" (${vIdx + 1}/${originalVideos.length})...`);
               
-              if (window.simulateQuotaCrash) {
-                window.simulateQuotaCrash = false; 
-                throw new Error("Simulated Quota Limit Exceeded (403)");
-              }
-
-              if (simulatorMode) {
-                await sleep(250);
-              } else {
-                const postRes = await fetch('https://www.googleapis.com/youtube/v3/playlistItems?part=snippet', {
-                  method: 'POST',
-                  headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    snippet: {
-                      playlistId: newPlaylistId,
-                      resourceId: { kind: 'youtube#video', videoId: video.id }
-                    }
-                  })
-                });
-                if (!postRes.ok) {
-                  job.failedCopyCount++;
-                  const errData = await postRes.json();
-                  console.warn(`Failed to copy video ${video.id} from "${old.title}":`, errData.error?.message || errData);
-                  
-                  if (postRes.status === 403 || errData.error?.message?.includes("quota")) {
-                    throw new Error("YouTube API daily quota exceeded. You can resume this sorting job tomorrow.");
+              const postRes = await fetch('https://www.googleapis.com/youtube/v3/playlistItems?part=snippet', {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  snippet: {
+                    playlistId: newPlaylistId,
+                    resourceId: { kind: 'youtube#video', videoId: video.id }
                   }
+                })
+              });
+              if (!postRes.ok) {
+                job.failedCopyCount++;
+                const errData = await postRes.json();
+                console.warn(`Failed to copy video ${video.id} from "${old.title}":`, errData.error?.message || errData);
+                
+                if (postRes.status === 403 || errData.error?.message?.includes("quota")) {
+                  throw new Error("YouTube API daily quota exceeded. You can resume this sorting job tomorrow.");
                 }
               }
 
@@ -329,15 +303,10 @@ export default function Dashboard({
               localStorage.setItem('activeSortJob', JSON.stringify(job));
             }
 
-            setProgress(`Deleting merged playlist "${old.title}"...`);
-            if (simulatorMode) {
-              await sleep(400);
-            } else {
-              await fetch(`https://www.googleapis.com/youtube/v3/playlists?id=${old.id}`, {
-                method: 'DELETE',
-                headers: { Authorization: `Bearer ${accessToken}` }
-              });
-            }
+            await fetch(`https://www.googleapis.com/youtube/v3/playlists?id=${old.id}`, {
+              method: 'DELETE',
+              headers: { Authorization: `Bearer ${accessToken}` }
+            });
             job.deletedPlaylists.push(old.id);
             localStorage.setItem('activeSortJob', JSON.stringify(job));
             await sleep(300);
@@ -709,13 +678,15 @@ export default function Dashboard({
         </div>
       )}
 
-      <div style={{ backgroundColor: 'var(--yt-spec-menu-background)', borderLeft: '4px solid #f1c40f', padding: '12px 16px', borderRadius: '4px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <Info color="#f1c40f" size={24} />
-        <div>
-          <h4 style={{ margin: '0 0 4px 0', color: 'var(--yt-spec-text-primary)' }}>YouTube API Quota Limit</h4>
-          <p style={{ margin: 0, fontSize: '14px', color: 'var(--yt-spec-text-secondary)' }}>Google limits apps to 10,000 API units per day. Creating a playlist costs 50 units. Adding a video costs 50 units. We will calculate your usage before executing any sorting.</p>
+      {accessToken && (
+        <div style={{ backgroundColor: 'var(--yt-spec-menu-background)', borderLeft: '4px solid #f1c40f', padding: '12px 16px', borderRadius: '4px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Info color="#f1c40f" size={24} />
+          <div>
+            <h4 style={{ margin: '0 0 4px 0', color: 'var(--yt-spec-text-primary)' }}>YouTube API Quota Limit</h4>
+            <p style={{ margin: 0, fontSize: '14px', color: 'var(--yt-spec-text-secondary)' }}>Google limits apps to 10,000 API units per day. Creating a playlist costs 50 units. Adding a video costs 50 units. We will calculate your usage before executing any sorting.</p>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="tools-bar">
         <h1 className="tools-title">Dashboard</h1>
@@ -801,27 +772,8 @@ export default function Dashboard({
       )}
 
       {progress && (
-        <div style={{ 
-          padding: '12px', 
-          backgroundColor: 'rgba(76, 175, 80, 0.1)', 
-          color: '#4caf50', 
-          borderRadius: '8px', 
-          marginBottom: '16px', 
-          fontWeight: 'bold',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <span>{progress}</span>
-          {simulatorMode && isExecuting && (
-            <button 
-              className="btn-primary" 
-              onClick={() => { window.simulateQuotaCrash = true; }}
-              style={{ backgroundColor: '#e74c3c', fontSize: '12px', padding: '6px 12px', border: 'none', cursor: 'pointer' }}
-            >
-              Simulate Quota Crash
-            </button>
-          )}
+        <div style={{ padding: '12px', backgroundColor: 'rgba(76, 175, 80, 0.1)', color: '#4caf50', borderRadius: '8px', marginBottom: '16px', fontWeight: 'bold' }}>
+          {progress}
         </div>
       )}
 

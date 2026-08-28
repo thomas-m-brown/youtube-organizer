@@ -2,6 +2,16 @@
 
 A YouTube-style, dark-mode web application designed to automatically scan, analyze, and reorganize your YouTube playlists into structured master categories using Google Identity Services (GIS) OAuth and the YouTube Data API v3.
 
+## Screenshots
+
+| Dashboard (Plan Preview) | Backup History (Revert Logs) |
+|:---:|:---:|
+| ![Dashboard Preview](src/assets/dashboard_preview.png) | ![Backup History Preview](src/assets/history_preview.png) |
+
+| Appearance & General Settings |
+|:---:|
+| ![Settings Preview](src/assets/settings_preview.png) |
+
 ## Features
 
 - **OAuth 2.0 Integration**: Sign in securely with your Google account to manage your playlists.

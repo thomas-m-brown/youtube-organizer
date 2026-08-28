@@ -11,9 +11,7 @@ export default function Settings({
   setIsExecuting, 
   progress, 
   setProgress, 
-  triggerModal,
-  simulatorMode,
-  setSimulatorMode
+  triggerModal
 }) {
   const [useEmojis, setUseEmojis] = useState(
     localStorage.getItem('useEmojis') === 'true'
@@ -21,8 +19,6 @@ export default function Settings({
   const [useAutoDesc, setUseAutoDesc] = useState(
     localStorage.getItem('useAutoDesc') !== 'false'
   );
-  const [testLogs, setTestLogs] = useState([]);
-  const [isTesting, setIsTesting] = useState(false);
 
   const toggleEmojis = () => {
     const newVal = !useEmojis;
@@ -36,158 +32,7 @@ export default function Settings({
     localStorage.setItem('useAutoDesc', newVal.toString());
   };
 
-  const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-  const runSelfTest = async () => {
-    setIsTesting(true);
-    setTestLogs(["Starting YouTube Playlist Organizer Self-Test..."]);
-    
-    const log = (msg) => {
-      setTestLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${msg}`]);
-    };
-
-    try {
-      log("Step 1: Enabling Sandbox Mode & Injecting Mock Token");
-      setSimulatorMode(true);
-      await sleep(500);
-
-      log("Step 2: Checking default sort settings on login");
-      const mockPlaylists = [
-        { id: 'mock_rare_songs', title: 'rare songs', description: 'Emoji playlist test', videos: 14, ignore: false },
-        { id: 'mock_cs_tech', title: 'Computer Science 💻', description: 'Tech related', videos: 11, ignore: false },
-        { id: 'mock_fitness', title: 'Gym Workout Motivation', description: 'Workout', videos: 8, ignore: false }
-      ];
-      setPlaylists(mockPlaylists);
-      log(`Loaded ${mockPlaylists.length} mock playlists. Verification: All set to 'Sort' by default.`);
-
-      log("Step 3: Simulating 'Protect' toggle persistence");
-      const updatedList = mockPlaylists.map((p, idx) => idx === 1 ? { ...p, ignore: true } : p);
-      setPlaylists(updatedList);
-      log("Toggled 'Computer Science 💻' to Protected.");
-      await sleep(400);
-
-      const savedIds = JSON.parse(localStorage.getItem('protectedPlaylistIds')) || [];
-      if (savedIds.includes('mock_cs_tech')) {
-        log("✅ SUCCESS: Ignored/Protected status saved in localStorage correctly.");
-      } else {
-        throw new Error("Ignored status was not saved in localStorage!");
-      }
-
-      log("Step 4: Simulating 'Smart Auto-Sort' plan generation");
-      setIsExecuting(true);
-      setProgress("Scanning playlist items...");
-      await sleep(1000);
-      setIsExecuting(false);
-      setProgress("");
-      
-      const plan = {
-        "Tech & Programming 💻": [],
-        "Visuals & Live Music 🎵": [],
-        "📂 Other": [mockPlaylists[0]] 
-      };
-      log("Plan generated: Grouped 'rare songs' (14 videos) into '📂 Other'.");
-
-      log("Step 5: Simulating category renaming");
-      const renamedPlan = {
-        "📂 Custom Category": [mockPlaylists[0]]
-      };
-      log("Renamed '📂 Other' to '📂 Custom Category'.");
-
-      log("Step 6: Executing Master Sort with simulated Quota Crash");
-      log("Creating Master Playlist '📂 Custom Category'...");
-      await sleep(500);
-      const newPlaylistId = "mock_master_custom";
-      
-      const job = {
-        proposedPlan: renamedPlan,
-        createdPlaylists: [{ id: newPlaylistId, title: "📂 Custom Category" }],
-        restorationData: [],
-        completedVideos: { [newPlaylistId]: [] },
-        deletedPlaylists: [],
-        failedCopyCount: 0,
-        timestamp: new Date().toLocaleString()
-      };
-      
-      localStorage.setItem('activeSortJob', JSON.stringify(job));
-      log("Copying videos... (Simulating quota limits at item 5)");
-      
-      const originalVideos = [];
-      for (let i = 1; i <= 14; i++) {
-        originalVideos.push({ id: `mock_vid_${i}`, title: `Mock Song #${i}` });
-      }
-
-      const copiedIds = [];
-      for (let i = 0; i < 5; i++) {
-        copiedIds.push(originalVideos[i].id);
-        log(`Copied "${originalVideos[i].title}" (Progress: ${i+1}/14)`);
-        await sleep(200);
-      }
-
-      job.completedVideos[newPlaylistId] = copiedIds;
-      localStorage.setItem('activeSortJob', JSON.stringify(job));
-      log("⚠️ WARNING: Quota limit hit! Simulating crash & pause.");
-      await sleep(500);
-
-      const savedJob = JSON.parse(localStorage.getItem('activeSortJob'));
-      if (savedJob && savedJob.completedVideos[newPlaylistId].length === 5) {
-        log("✅ SUCCESS: Sorting job state successfully serialized and saved in localStorage.");
-      } else {
-        throw new Error("Job state was not saved correctly!");
-      }
-
-      log("Step 7: Resuming the sorting job from saved state");
-      log("Resuming job...");
-      await sleep(500);
-      
-      const resumedCopied = [...savedJob.completedVideos[newPlaylistId]];
-      for (let i = 5; i < 14; i++) {
-        resumedCopied.push(originalVideos[i].id);
-        log(`Copied "${originalVideos[i].title}" (Progress: ${i+1}/14)`);
-        await sleep(150);
-      }
-      
-      job.completedVideos[newPlaylistId] = resumedCopied;
-      job.restorationData.push({
-        playlistId: 'mock_rare_songs',
-        title: 'rare songs',
-        videoIds: originalVideos.map(v => v.id),
-        videos: originalVideos
-      });
-      job.deletedPlaylists.push('mock_rare_songs');
-      
-      const finalBackup = {
-        timestamp: job.timestamp,
-        createdPlaylists: job.createdPlaylists,
-        restorationData: job.restorationData
-      };
-      localStorage.setItem('lastSortBackup', JSON.stringify(finalBackup));
-      localStorage.removeItem('activeSortJob');
-      
-      log("All 14 videos successfully copied to Master Playlist. Original 'rare songs' deleted.");
-      log("✅ SUCCESS: Sorting job completed and backup saved.");
-
-      log("Step 8: Verifying Revert & Restore process");
-      const backupDetails = JSON.parse(localStorage.getItem('lastSortBackup'));
-      log(`Backup records: ${backupDetails.restorationData[0].videos.length} videos from '${backupDetails.restorationData[0].title}'.`);
-      
-      log("Deleting Master Playlist '📂 Custom Category'...");
-      await sleep(400);
-      log("Re-creating original playlist 'rare songs'...");
-      await sleep(400);
-      log(`Restoring all ${backupDetails.restorationData[0].videos.length} videos...`);
-      for (let i = 0; i < 14; i++) {
-        await sleep(100);
-      }
-      localStorage.removeItem('lastSortBackup');
-      log("Revert completed successfully!");
-      log("✅ SUCCESS: Original playlists re-created and video lists fully restored.");
-
-      log("🎉 ALL DIAGNOSTIC TESTS PASSED SUCCESSFULLY! The application works perfectly.");
-    } catch (e) {
-      log(`❌ TEST FAILED: ${e.message}`);
-    }
-    setIsTesting(false);
-  };
 
   const handleClearEmojis = async () => {
     if (!accessToken) return;
@@ -348,68 +193,7 @@ export default function Settings({
           </div>
         )}
 
-        {/* Sandbox Mode / Simulator (Always Visible) */}
-        <div style={{ backgroundColor: 'var(--yt-spec-menu-background)', border: '1px solid var(--yt-spec-border-color)', padding: '24px', borderRadius: '8px' }}>
-          <h3 style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px', color: '#e67e22' }}>
-            <Sparkles size={20} />
-            Developer Sandbox (Simulator Mode)
-          </h3>
-          <p style={{ color: 'var(--yt-spec-text-secondary)', marginBottom: '16px', fontSize: '14px', lineHeight: '1.5' }}>
-            Run the application inside a mock sandbox environment. This simulates all YouTube API calls (creating/deleting playlists, copying videos, rollbacks) without spending any of your 10,000 units daily quota limits.
-          </p>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
-              <input 
-                type="checkbox" 
-                checked={simulatorMode} 
-                onChange={(e) => setSimulatorMode(e.target.checked)} 
-                style={{ width: '20px', height: '20px', accentColor: '#e67e22' }} 
-              />
-              <span style={{ fontSize: '15px', fontWeight: '500', color: 'var(--yt-spec-text-primary)' }}>
-                Enable Simulator Sandbox Mode
-              </span>
-            </label>
 
-            <div style={{ borderTop: '1px solid var(--yt-spec-border-color)', paddingTop: '16px' }}>
-              <p style={{ color: 'var(--yt-spec-text-secondary)', marginBottom: '12px', fontSize: '13px' }}>
-                Verify the application's entire codebase logic (loading, sorting, pausing, resuming, and reverting) using an automated sandbox integration test suite:
-              </p>
-              <button 
-                className="btn-primary" 
-                onClick={runSelfTest} 
-                disabled={isExecuting || isTesting}
-                style={{ backgroundColor: '#e67e22', display: 'flex', alignItems: 'center', gap: '8px' }}
-              >
-                <Sparkles size={18} />
-                {isTesting ? "Running Diagnostics..." : "Run Integration Self-Tests"}
-              </button>
-            </div>
-
-            {testLogs.length > 0 && (
-              <div style={{ marginTop: '8px' }}>
-                <p style={{ margin: '0 0 6px 0', color: 'var(--yt-spec-text-primary)', fontSize: '13px', fontWeight: 'bold' }}>
-                  Sandbox Diagnostic Logs:
-                </p>
-                <div style={{ 
-                  backgroundColor: '#111', 
-                  color: '#39ff14', 
-                  padding: '16px', 
-                  borderRadius: '4px', 
-                  fontFamily: 'monospace', 
-                  fontSize: '12px', 
-                  maxHeight: '250px', 
-                  overflowY: 'auto',
-                  lineHeight: '1.5',
-                  whiteSpace: 'pre-wrap',
-                  border: '1px solid #333'
-                }}>
-                  {testLogs.join("\n")}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
 
         {/* Theme Settings (Always Visible) */}
         <div style={{ backgroundColor: 'var(--yt-spec-menu-background)', border: '1px solid var(--yt-spec-border-color)', padding: '24px', borderRadius: '8px' }}>

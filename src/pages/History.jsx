@@ -8,8 +8,7 @@ export default function History({
   isExecuting, 
   setIsExecuting, 
   progress, 
-  setProgress,
-  simulatorMode
+  setProgress 
 }) {
   const [backup, setBackup] = useState(null);
 
@@ -57,14 +56,10 @@ export default function History({
       // 1. Delete created Master Playlists
       for (const created of backup.createdPlaylists) {
         setProgress(`Deleting Master Playlist: "${created.title}"...`);
-        if (simulatorMode) {
-          await sleep(400);
-        } else {
-          await fetch(`https://www.googleapis.com/youtube/v3/playlists?id=${created.id}`, {
-            method: 'DELETE',
-            headers: { Authorization: `Bearer ${accessToken}` }
-          });
-        }
+        await fetch(`https://www.googleapis.com/youtube/v3/playlists?id=${created.id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
         await sleep(300); 
       }
 
@@ -75,21 +70,16 @@ export default function History({
           
           let newPlaylistId = "";
           try {
-            if (simulatorMode) {
-              await sleep(400);
-              newPlaylistId = "mock_restored_" + Math.random().toString(36).substr(2, 9);
-            } else {
-              const createRes = await fetch('https://www.googleapis.com/youtube/v3/playlists?part=snippet,status', {
-                method: 'POST',
-                headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  snippet: { title: orig.title, description: 'Restored from Backup' },
-                  status: { privacyStatus: 'private' }
-                })
-              });
-              const createdData = await createRes.json();
-              newPlaylistId = createdData.id;
-            }
+            const createRes = await fetch('https://www.googleapis.com/youtube/v3/playlists?part=snippet,status', {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                snippet: { title: orig.title, description: 'Restored from Backup' },
+                status: { privacyStatus: 'private' }
+              })
+            });
+            const createdData = await createRes.json();
+            newPlaylistId = createdData.id;
           } catch (e) {
             console.error(`Failed to re-create playlist "${orig.title}":`, e);
             continue; 
@@ -98,26 +88,22 @@ export default function History({
           if (newPlaylistId && orig.videoIds && orig.videoIds.length > 0) {
             setProgress(`Restoring ${orig.videoIds.length} videos to "${orig.title}"...`);
             for (const videoId of orig.videoIds) {
-              if (simulatorMode) {
-                await sleep(150);
-              } else {
-                const postRes = await fetch('https://www.googleapis.com/youtube/v3/playlistItems?part=snippet', {
-                  method: 'POST',
-                  headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    snippet: {
-                      playlistId: newPlaylistId,
-                      resourceId: { kind: 'youtube#video', videoId: videoId }
-                    }
-                  })
-                });
-                if (!postRes.ok) {
-                  failedRestoreCount++;
-                  const errData = await postRes.json();
-                  console.warn(`Failed to restore video ${videoId} to playlist "${orig.title}":`, errData.error?.message || errData);
-                }
-                await sleep(500);
+              const postRes = await fetch('https://www.googleapis.com/youtube/v3/playlistItems?part=snippet', {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  snippet: {
+                    playlistId: newPlaylistId,
+                    resourceId: { kind: 'youtube#video', videoId: videoId }
+                  }
+                })
+              });
+              if (!postRes.ok) {
+                failedRestoreCount++;
+                const errData = await postRes.json();
+                console.warn(`Failed to restore video ${videoId} to playlist "${orig.title}":`, errData.error?.message || errData);
               }
+              await sleep(500);
             }
           }
         }
