@@ -81,11 +81,17 @@ To run the app inside a local desktop window (with hot reloading):
 npm run electron:start
 ```
 
-### Build Desktop Packages (.exe / .dmg)
-To compile a single-file portable executable (`.exe` on Windows, `.dmg` on macOS) that requires no local installation or terminal setup:
-```bash
-npm run electron:build
-```
+### Build Desktop Packages (.exe / .app)
+To package the app for your operating system:
+
+* **For Windows (`.exe`)**:
+  ```bash
+  npm run electron:build:win
+  ```
+* **For macOS (`.app`)**:
+  ```bash
+  npm run electron:build:mac
+  ```
 The resulting files will be generated in the `/release` directory!
 
 ## Technologies Used
