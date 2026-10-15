@@ -1,6 +1,13 @@
-# YT Playlist Organizer
+# YT Playlist Organizer: Idempotent Playlist Management & Quota Guard
 
-A YouTube-style, dark-mode web application designed to automatically scan, analyze, and reorganize your YouTube playlists into structured master categories using Google Identity Services (GIS) OAuth and the YouTube Data API v3.
+![React](https://img.shields.io/badge/frontend-React%20%2B%20Vite-61dafb?style=flat-square&logo=react&logoColor=black)
+![Electron](https://img.shields.io/badge/desktop-Electron-47848F?style=flat-square&logo=electron&logoColor=white)
+![Google Cloud](https://img.shields.io/badge/auth-Google%20OAuth%202.0%20PKCE-4285F4?style=flat-square&logo=google&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
+
+A production-grade desktop application engineered for non-destructive, batch playlist reorganization using the YouTube Data API v3 and Google Identity Services (GIS) OAuth 2.0. Built to solve library fragmentation and categorization without risking data loss.
+
+---
 
 ## Screenshots
 
@@ -12,95 +19,111 @@ A YouTube-style, dark-mode web application designed to automatically scan, analy
 |:---:|
 | ![Settings Preview](src/assets/settings_preview.png) |
 
+---
+
+## Systems Architecture & Data Safety
+
+```mermaid
+flowchart LR
+    User[User Rule Selection] --> Filter[Safe-Zone Isolation Filter]
+    Filter --> Diff[State Diff Generator]
+    Diff --> Backup[Transactional JSON Snapshot]
+    Backup --> Batch[Batch API Quota Guard]
+    Batch --> YouTube[YouTube Data API v3 Engine]
+    YouTube -.-> Rollback[Atomic Rollback Engine]
+```
+
+1. **Transactional Rollback Engine**:
+   - Destructive operations (merges, deletes, bulk reorganization) generate pre-execution state snapshots.
+   - If an API error occurs mid-batch or a user reverts, the local rollback engine references historical JSON logs to restore original playlist compositions and video ordering.
+2. **Strict Quota Conservation**:
+   - YouTube Data API v3 enforces a default quota limit of 10,000 units/day.
+   - Operations are batched, validated client-side, and cached locally to eliminate redundant network roundtrips and avoid quota depletion.
+3. **Protected Safe Zones**:
+   - High-value collections (Liked Videos, user-flagged rare archives, curated albums) are quarantined behind read-only protections to prevent accidental mutation during bulk operations.
+4. **OAuth 2.0 PKCE Authentication**:
+   - Implements modern Google Identity Services (GIS) token flows without persistent backend secret storage, ensuring client-side security.
+
+---
+
 ## Features
 
-- **OAuth 2.0 Integration**: Sign in securely with your Google account to manage your playlists.
-- **Smart Auto-Sort**: Automatically matches, categorizes, and merges your playlists into master collections based on customizable keyword heuristics.
-- **Side-by-Side Playlist Toggles**: Mark specific playlists for sorting or protect them in a safe zone (like liked songs, albums, and rare tracks) to keep them untouched.
-- **Interactive Revert (Backup)**: Destructive master sorts create an automatic backup, allowing you to delete the master collections and safely restore your original video list items.
-- **Appearance Modes**: Complete Dark, Light, and System Default theme integration.
-- **Bulk Cleanup Tools**: Bulk clear trailing emoji suffixes or auto-generated descriptions across all your playlists in one click.
-- **Playlist Management**: Create, rename, delete, and set custom cover thumbnails (either from a YouTube video URL/ID or a local image upload) via a custom in-app modal.
-- **Custom Modals**: Standardized interface dialogs to prevent the browser from blocking dialog prompts.
+- **Smart Auto-Sort**: Automatically matches, categorizes, and merges playlists into master collections using configurable keyword heuristics.
+- **Side-by-Side Playlist Toggles**: Granular per-playlist controls to include in active batches or protect in isolated safe zones.
+- **Bulk Cleanup Tools**: Strip trailing emoji suffixes, automated metadata tags, and boilerplate descriptions in a single batch pass.
+- **Full Metadata Management**: In-app dialogs for renaming, deleting, and updating custom playlist cover thumbnails via YouTube URLs or local image uploads.
+- **Cross-Platform Themes**: Complete dark, light, and system-adaptive UI themes.
+
+---
 
 ## Setup & Installation
 
-### 1. Clone the repository
+### 1. Clone & Install
 ```bash
-git clone https://github.com/your-username/yt-playlist-organizer.git
-cd yt-playlist-organizer
+git clone https://github.com/thomas-m-brown/youtube-organizer.git
+cd youtube-organizer
+npm install
 ```
 
 ### 2. Configure Environment Variables
-Copy the `.env.example` file to `.env`:
+Copy `.env.example` to `.env`:
 ```bash
 cp .env.example .env
 ```
-Open `.env` and configure your Google OAuth Client ID:
+Provide your Google OAuth Client ID in `.env`:
 ```env
 VITE_GOOGLE_CLIENT_ID=your_google_oauth_client_id_here
 ```
 
-### 3. How to Get a Google OAuth Client ID
+### 3. Google OAuth Setup
+1. Navigate to the [Google Cloud Console](https://console.cloud.google.com/).
+2. Enable the **YouTube Data API v3**.
+3. Under **OAuth consent screen**, add the scopes:
+   - `.../auth/youtube`
+   - `.../auth/youtube.force-ssl`
+4. Under **Credentials**, create an **OAuth 2.0 Client ID** (Web application).
+   - Set **Authorized JavaScript Origins** to `http://localhost:5173`.
+   - Set **Authorized Redirect URIs** to `http://localhost:5173`.
+5. Save the generated Client ID in your local `.env`.
 
-To run the application, you must configure a Google Cloud project to retrieve a Client ID:
-
-1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
-2. Create a new project (e.g. `YouTube Playlist Organizer`).
-3. In the sidebar, navigate to **APIs & Services** > **Library**, search for **YouTube Data API v3**, and click **Enable**.
-4. Go to **APIs & Services** > **OAuth consent screen**:
-   * Set User Type to **External** and fill in your app details.
-   * Under **Scopes**, add `/auth/youtube` (manage your YouTube account) and `/auth/youtube.force-ssl`.
-   * Under **Test Users**, add your own Google email address (so you can log in while in testing mode).
-5. Go to **APIs & Services** > **Credentials**:
-   * Click **Create Credentials** > **OAuth client ID**.
-   * Choose **Web application** as the Application Type.
-   * Under **Authorized JavaScript Origins**, click **Add URI** and enter `http://localhost:5173`.
-   * Under **Authorized Redirect URIs**, enter `http://localhost:5173` (matching the origin).
-   * Click **Create** and copy your Client ID into your local `.env` file.
-
-### 4. Install dependencies
-```bash
-npm install
-```
-
-### 5. Run local server
+### 4. Run Development Server
 ```bash
 npm run dev
 ```
+The application will launch at `http://localhost:5173/`.
 
-The app will start running locally at `http://localhost:5173/`.
+---
 
-## Desktop App (Electron)
+## Desktop Packaging (Electron)
 
-You can package this web application as a standalone desktop application (`.exe` for Windows, `.dmg` for macOS) so that users can download it, double-click, and run it locally on their computers.
-
-### Run Desktop App in Development
-To run the app inside a local desktop window (with hot reloading):
+### Development Desktop Window
 ```bash
 npm run electron:start
 ```
 
-### Build Desktop Packages (.exe / .app)
-To package the app for your operating system:
-
-* **For Windows (`.exe`)**:
+### Package Installers (.exe / .app)
+* **Windows (`.exe`)**:
   ```bash
   npm run electron:build:win
   ```
-* **For macOS (`.app`)**:
+* **macOS (`.app` / `.dmg`)**:
   ```bash
   npm run electron:build:mac
   ```
-The resulting files will be generated in the `/release` directory!
+Installers will be generated in the `/release` directory.
+
+---
 
 ## Technologies Used
 
 - **Desktop Framework**: Electron
-- **Frontend**: React 19, React Router v7, Vite
+- **Frontend Core**: React 19, React Router v7, Vite
 - **Icons**: Lucide React
-- **APIs**: YouTube Data API v3, Google Identity Services (OAuth 2.0)
-- **Styling**: Vanilla CSS (CSS Variables)
+- **APIs**: YouTube Data API v3, Google Identity Services (GIS OAuth 2.0)
+- **Styling**: Vanilla CSS with structured design tokens
 
-## Credits
-Created by **Thomas M. Brown** & **Google AntiGravity**.
+---
+
+## License
+
+MIT
