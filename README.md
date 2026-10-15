@@ -1,11 +1,11 @@
-# YT Playlist Organizer: Idempotent Playlist Management & Quota Guard
+# YouTube Playlist Organizer: Bulk Sort, Clean & Categorize Playlists
 
 ![React](https://img.shields.io/badge/frontend-React%20%2B%20Vite-61dafb?style=flat-square&logo=react&logoColor=black)
 ![Electron](https://img.shields.io/badge/desktop-Electron-47848F?style=flat-square&logo=electron&logoColor=white)
 ![Google Cloud](https://img.shields.io/badge/auth-Google%20OAuth%202.0%20PKCE-4285F4?style=flat-square&logo=google&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
 
-A production-grade desktop application engineered for non-destructive, batch playlist reorganization using the YouTube Data API v3 and Google Identity Services (GIS) OAuth 2.0. Built to solve library fragmentation and categorization without risking data loss.
+A production-grade web and desktop application engineered to solve YouTube playlist sprawl. Automatically scans, categorizes, and consolidates fragmented playlists into structured master collections using Google Identity Services (GIS) OAuth 2.0 PKCE and the YouTube Data API v3—backed by non-destructive transactional rollbacks and strict quota budgeting.
 
 ---
 
@@ -49,7 +49,7 @@ flowchart LR
 
 ---
 
-## Features
+## Core Capabilities
 
 - **Smart Auto-Sort**: Automatically matches, categorizes, and merges playlists into master collections using configurable keyword heuristics.
 - **Side-by-Side Playlist Toggles**: Granular per-playlist controls to include in active batches or protect in isolated safe zones.
@@ -59,12 +59,12 @@ flowchart LR
 
 ---
 
-## Setup & Installation
+## Quickstart
 
 ### 1. Clone & Install
 ```bash
-git clone https://github.com/thomas-m-brown/youtube-organizer.git
-cd youtube-organizer
+git clone https://github.com/thomas-m-brown/youtube-playlist-organizer.git
+cd youtube-playlist-organizer
 npm install
 ```
 
@@ -89,7 +89,7 @@ VITE_GOOGLE_CLIENT_ID=your_google_oauth_client_id_here
    - Set **Authorized Redirect URIs** to `http://localhost:5173`.
 5. Save the generated Client ID in your local `.env`.
 
-### 4. Run Development Server
+### 4. Run Web Application
 ```bash
 npm run dev
 ```
@@ -114,6 +114,16 @@ npm run electron:start
   npm run electron:build:mac
   ```
 Installers will be generated in the `/release` directory.
+
+### macOS Gatekeeper / Security Notice
+> [!NOTE]
+> If macOS displays *"The app was not opened because it contains malware"* or prevents opening an unnotarized community build:
+> 1. Clear the quarantine attribute in Terminal:
+>    ```bash
+>    xattr -cr /path/to/YouTube-Playlist-Organizer.app
+>    ```
+> 2. Or navigate to **System Settings > Privacy & Security** and click **Open Anyway**.
+> 3. Alternatively, use the Web App (`npm run dev`), which runs zero-installation in your default browser with identical functionality.
 
 ---
 

@@ -1,8 +1,8 @@
 {
-  "name": "youtube-organizer",
+  "name": "youtube-playlist-organizer",
   "private": true,
-  "version": "0.0.0",
-  "description": "YouTube Playlist Organizer Web & Desktop App",
+  "version": "1.0.0",
+  "description": "YouTube Playlist Organizer — Automatically scan, categorize, and reorganize YouTube playlists into structured master collections with transactional backups.",
   "author": "Thomas M. Brown",
   "type": "module",
   "main": "electron/main.cjs",
@@ -12,8 +12,8 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "electron:start": "electron electron/main.cjs",
-    "electron:build:win": "vite build && electron-packager . \"YT-Playlist-Organizer\" --platform=win32 --arch=x64 --out=release --overwrite",
-    "electron:build:mac": "vite build && electron-packager . \"YT-Playlist-Organizer\" --platform=darwin --arch=universal --out=release --overwrite"
+    "electron:build:win": "vite build && electron-packager . \"YouTube-Playlist-Organizer\" --platform=win32 --arch=x64 --out=release --overwrite",
+    "electron:build:mac": "vite build && electron-packager . \"YouTube-Playlist-Organizer\" --platform=darwin --arch=universal --out=release --overwrite"
   },
   "dependencies": {
     "lucide-react": "^1.25.0",
@@ -31,8 +31,8 @@
     "vite": "^8.1.1"
   },
   "build": {
-    "appId": "com.thomasmbrown.youtubeorganizer",
-    "productName": "YT Playlist Organizer",
+    "appId": "com.thomasmbrown.youtubeplaylistorganizer",
+    "productName": "YouTube Playlist Organizer",
     "files": [
       "dist/**/*",
       "electron/**/*",
