@@ -1,23 +1,45 @@
 // Realistic mock dataset of bulk playlists and video items for demo mode and portfolio showcase
 
+const escapeXml = (unsafe) => {
+  return String(unsafe).replace(/[<>&'"]/g, (c) => {
+    switch (c) {
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '&': return '&amp;';
+      case '\'': return '&apos;';
+      case '"': return '&quot;';
+      default: return c;
+    }
+  });
+};
+
 const makeThumb = (title, bg1, bg2, duration) => {
-  const encodedTitle = title.length > 28 ? title.substring(0, 26) + '...' : title;
+  const trimmed = title.length > 28 ? title.substring(0, 26) + '...' : title;
+  const encodedTitle = escapeXml(trimmed);
+  const encodedDuration = escapeXml(duration || '10:00');
+  const gid = 'g_' + Math.random().toString(36).substring(2, 8);
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180">
     <defs>
-      <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <linearGradient id="${gid}" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stop-color="${bg1}"/>
         <stop offset="100%" stop-color="${bg2}"/>
       </linearGradient>
     </defs>
-    <rect width="320" height="180" fill="url(#g)"/>
-    <circle cx="160" cy="85" r="28" fill="rgba(0,0,0,0.5)"/>
+    <rect width="320" height="180" fill="url(#${gid})"/>
+    <circle cx="160" cy="85" r="26" fill="rgba(0,0,0,0.6)"/>
     <polygon points="152,73 174,85 152,97" fill="#ffffff"/>
-    <rect x="0" y="140" width="320" height="40" fill="rgba(0,0,0,0.7)"/>
-    <text x="12" y="165" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600" fill="#ffffff">${encodedTitle}</text>
-    <rect x="268" y="148" width="44" height="22" rx="4" fill="#000000"/>
-    <text x="274" y="163" font-family="sans-serif" font-size="11" font-weight="bold" fill="#ffffff">${duration}</text>
+    <rect x="0" y="136" width="320" height="44" fill="rgba(10,10,10,0.85)"/>
+    <text x="12" y="163" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" fill="#ffffff">${encodedTitle}</text>
+    <rect x="264" y="146" width="48" height="24" rx="4" fill="#000000"/>
+    <text x="272" y="162" font-family="sans-serif" font-size="11" font-weight="bold" fill="#ffffff">${encodedDuration}</text>
   </svg>`;
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  if (typeof window !== 'undefined' && typeof window.btoa !== 'undefined') {
+    return 'data:image/svg+xml;base64,' + window.btoa(unescape(encodeURIComponent(svg)));
+  }
+  if (typeof Buffer !== 'undefined') {
+    return 'data:image/svg+xml;base64,' + Buffer.from(svg).toString('base64');
+  }
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 };
 
 export const MOCK_PLAYLISTS = [

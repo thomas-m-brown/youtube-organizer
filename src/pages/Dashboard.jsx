@@ -880,8 +880,16 @@ export default function Dashboard({
                     zIndex: activeMenuId === playlist.id ? 10 : 1
                   }}
                 >
-                  <div className="playlist-thumbnail" style={{ backgroundImage: `url(${playlist.thumbnail})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
-                    {!playlist.thumbnail && <PlaySquare size={32} color="var(--yt-spec-text-secondary)" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />}
+                  <div className="playlist-thumbnail" style={{ overflow: 'hidden', position: 'relative' }}>
+                    {playlist.thumbnail ? (
+                      <img 
+                        src={playlist.thumbnail} 
+                        alt={playlist.title}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} 
+                      />
+                    ) : (
+                      <PlaySquare size={32} color="var(--yt-spec-text-secondary)" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
+                    )}
                     <div className="playlist-video-count">{playlist.videos} videos</div>
                     
                     {playlist.ignore && (

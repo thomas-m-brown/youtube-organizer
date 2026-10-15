@@ -8,9 +8,18 @@ import Settings from './pages/Settings';
 import { MOCK_PLAYLISTS, MOCK_BACKUP } from './mockData';
 
 function App() {
-  const [accessToken, setAccessToken] = useState(null);
-  const [isDemo, setIsDemo] = useState(false);
-  const [playlists, setPlaylists] = useState([]);
+  const isDemoActive = typeof window !== 'undefined' && (
+    new URLSearchParams(window.location.search).get('demo') === 'true' || 
+    localStorage.getItem('demoMode') === 'true'
+  );
+
+  if (isDemoActive && typeof window !== 'undefined' && !localStorage.getItem('lastSortBackup')) {
+    localStorage.setItem('lastSortBackup', JSON.stringify(MOCK_BACKUP));
+  }
+
+  const [accessToken, setAccessToken] = useState(() => isDemoActive ? 'demo-token' : null);
+  const [isDemo, setIsDemo] = useState(isDemoActive);
+  const [playlists, setPlaylists] = useState(() => isDemoActive ? MOCK_PLAYLISTS : []);
   const [loading, setLoading] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
   const [progress, setProgress] = useState("");
