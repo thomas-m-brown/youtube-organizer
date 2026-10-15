@@ -5,9 +5,11 @@ import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import History from './pages/History';
 import Settings from './pages/Settings';
+import { MOCK_PLAYLISTS, MOCK_BACKUP } from './mockData';
 
 function App() {
   const [accessToken, setAccessToken] = useState(null);
+  const [isDemo, setIsDemo] = useState(false);
   const [playlists, setPlaylists] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
@@ -27,6 +29,30 @@ function App() {
   const refetchPlaylists = () => {
     setFetchTrigger(prev => prev + 1);
   };
+
+  const activateDemoMode = () => {
+    setIsDemo(true);
+    setAccessToken('demo-token');
+    setPlaylists(MOCK_PLAYLISTS);
+    localStorage.setItem('demoMode', 'true');
+    if (!localStorage.getItem('lastSortBackup')) {
+      localStorage.setItem('lastSortBackup', JSON.stringify(MOCK_BACKUP));
+    }
+  };
+
+  const handleLogout = () => {
+    setAccessToken(null);
+    setIsDemo(false);
+    localStorage.removeItem('demoMode');
+    setPlaylists([]);
+  };
+
+  useEffect(() => {
+    const isDemoRequested = new URLSearchParams(window.location.search).get('demo') === 'true' || localStorage.getItem('demoMode') === 'true';
+    if (isDemoRequested) {
+      activateDemoMode();
+    }
+  }, []);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -62,6 +88,11 @@ function App() {
   useEffect(() => {
     if (!accessToken) {
       setPlaylists([]);
+      return;
+    }
+
+    if (accessToken === 'demo-token') {
+      setPlaylists(MOCK_PLAYLISTS);
       return;
     }
 
@@ -187,9 +218,11 @@ function App() {
       <Header 
         onLogin={setAccessToken} 
         isLoggedIn={!!accessToken} 
-        onLogout={() => setAccessToken(null)}
+        onLogout={handleLogout}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
+        isDemo={isDemo}
+        onExploreDemo={activateDemoMode}
       />
       {(loading || isExecuting) && (
         <div className="loading-bar-container">

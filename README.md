@@ -11,13 +11,16 @@ A production-grade desktop application engineered for non-destructive, batch pla
 
 ## Screenshots
 
-| Dashboard (Plan Preview) | Backup History (Revert Logs) |
+| Bulk Playlists & Safe Zones | Smart Auto-Sort (Merge Preview) |
 |:---:|:---:|
-| ![Dashboard Preview](src/assets/dashboard_preview.png) | ![Backup History Preview](src/assets/history_preview.png) |
+| ![Bulk Playlists Overview](src/assets/playlists_overview.png) | ![Dashboard Plan Preview](src/assets/dashboard_preview.png) |
 
-| Appearance & General Settings |
-|:---:|
-| ![Settings Preview](src/assets/settings_preview.png) |
+| Backup History (Transactional Revert Logs) | Appearance & Quota Settings |
+|:---:|:---:|
+| ![Backup History Preview](src/assets/history_preview.png) | ![Settings Preview](src/assets/settings_preview.png) |
+
+> [!TIP]
+> **Interactive Demo Mode**: Click **"Explore Demo"** in the top navigation or append `?demo=true` to the URL to instantly test the app with 18+ realistic playlists, nested video items, safe zones, and automated category plans without needing Google OAuth API credentials.
 
 ---
 

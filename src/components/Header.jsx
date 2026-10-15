@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Video, User, LogOut } from 'lucide-react';
 
-export default function Header({ onLogin, isLoggedIn, onLogout, searchQuery, setSearchQuery }) {
+export default function Header({ onLogin, isLoggedIn, onLogout, searchQuery, setSearchQuery, isDemo, onExploreDemo }) {
   const [showDropdown, setShowDropdown] = useState(false);
 
   const handleLogin = () => {
@@ -48,14 +48,17 @@ export default function Header({ onLogin, isLoggedIn, onLogout, searchQuery, set
 
       <div className="header-right">
         {!isLoggedIn ? (
-          <button className="btn-primary" onClick={handleLogin}>Sign in with Google</button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className="btn-primary" onClick={handleLogin}>Sign in with Google</button>
+            <button className="btn-primary" onClick={onExploreDemo} style={{ backgroundColor: '#27ae60' }}>Explore Demo</button>
+          </div>
         ) : (
           <div style={{ position: 'relative' }}>
             <button 
               onClick={() => setShowDropdown(!showDropdown)} 
               style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#4caf50', fontWeight: 'bold' }}
             >
-              <span>Connected</span>
+              <span>{isDemo ? "Demo Connected" : "Connected"}</span>
               <User size={24} color="#4caf50"/>
             </button>
             

@@ -80,6 +80,13 @@ export default function Dashboard({
     if (useEmojis) return name;
     return name.replace(/[\s\p{Extended_Pictographic}\u2600-\u27BF\ufe0f]+$/gu, '').trim();
   };
+  useEffect(() => {
+    const shouldAutoPlan = new URLSearchParams(window.location.search).get('plan') === 'true';
+    if (shouldAutoPlan && playlists.length > 0 && !proposedPlan) {
+      generateAutoSortPlan();
+    }
+  }, [playlists]);
+
   // Smart scan that also loads video names/thumbnails
   const generateAutoSortPlan = async () => {
     if (!accessToken) return;
@@ -87,30 +94,33 @@ export default function Dashboard({
     setProgress("Scanning videos inside your playlists for merge preview...");
 
     try {
-      // Load video previews for active playlists
-      const playlistsWithVideos = await Promise.all(
-        playlists.map(async (p) => {
-          if (p.ignore || p.videoItems) return p; // Skip ignored or already loaded
-          
-          try {
-            const response = await fetch(
-              `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${p.id}&maxResults=50`,
-              { headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' } }
-            );
-            const data = await response.json();
-            const videoItems = data.items ? data.items.map(item => ({
-              title: item.snippet.title,
-              thumbnail: item.snippet.thumbnails?.default?.url || ''
-            })) : [];
-            return { ...p, videoItems };
-          } catch (e) {
-            console.error(`Error loading videos for playlist ${p.title}:`, e);
-            return { ...p, videoItems: [] };
-          }
-        })
-      );
+      let playlistsWithVideos = playlists;
+      if (accessToken !== 'demo-token') {
+        // Load video previews for active playlists
+        playlistsWithVideos = await Promise.all(
+          playlists.map(async (p) => {
+            if (p.ignore || p.videoItems) return p; // Skip ignored or already loaded
+            
+            try {
+              const response = await fetch(
+                `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${p.id}&maxResults=50`,
+                { headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' } }
+              );
+              const data = await response.json();
+              const videoItems = data.items ? data.items.map(item => ({
+                title: item.snippet.title,
+                thumbnail: item.snippet.thumbnails?.default?.url || ''
+              })) : [];
+              return { ...p, videoItems };
+            } catch (e) {
+              console.error(`Error loading videos for playlist ${p.title}:`, e);
+              return { ...p, videoItems: [] };
+            }
+          })
+        );
 
-      setPlaylists(playlistsWithVideos);
+        setPlaylists(playlistsWithVideos);
+      }
 
       const plan = {
         "Tech & Programming 💻": [],
